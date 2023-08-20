@@ -32,7 +32,7 @@ from lightning.pytorch.utilities.rank_zero import rank_prefixed_message, rank_ze
 log = logging.getLogger(__name__)
 
 
-class MutlitaskEarlyStopping(Callback):
+class MultitaskEarlyStopping(Callback):
     r"""Monitor metrics and stop training when they stop improving.
 
     Args:
@@ -74,7 +74,7 @@ class MutlitaskEarlyStopping(Callback):
     Example::
 
         >>> from lightning.pytorch import Trainer
-        >>> from lightning.pytorch.callbacks import EarlyStopping
+        >>> from lightning.pytorch.callbacks import MultitaskEarlyStopping
         >>> early_stopping = MultitaskEarlyStopping('val_loss', 'val_aux_loss')
         >>> trainer = Trainer(callbacks=[early_stopping])
 
@@ -150,7 +150,7 @@ class MutlitaskEarlyStopping(Callback):
 
         error_msg = (
             f"Early stopping conditioned on metric `{monitor_info.monitor}` which is not available."
-            " Pass in or modify your `EarlyStopping` callback to use any of the following:"
+            " Pass in or modify your `MultitaskEarlyStopping` callback to use any of the following:"
             f' `{"`, `".join(list(logs.keys()))}`'
         )
 
