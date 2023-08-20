@@ -227,7 +227,7 @@ class MultitaskEarlyStopping(Callback):
         reasons = []
         skipped_metrics = 0
         for metric, monitor_info in self.monitor_dict.items():
-            if not self._validate_condition_metric(monitor_info, log):
+            if not self._validate_condition_metric(monitor_info, logs):
                 skipped_metrics += 1
                 continue  # short circuit if metric not present
 
