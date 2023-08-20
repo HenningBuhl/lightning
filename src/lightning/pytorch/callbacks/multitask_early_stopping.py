@@ -272,7 +272,9 @@ class MultitaskEarlyStopping(Callback):
         if should_stop:
             self.stopped_epoch = trainer.current_epoch
         if reasons and self.verbose:
-            self._log_info(trainer, " ; ".join(reasons), self.log_rank_zero_only)
+            summary = 'Training ' + ('was stopped early') if should_stop else 'continues' + '. ' + \
+                'Individual outputs of metric checking: '
+            self._log_info(trainer, summary + " ; ".join(reasons), self.log_rank_zero_only)
 
     def _evaluate_stopping_criteria(self, monitor_info, current: Tensor) -> Tuple[bool, Optional[str]]:
         should_stop = False
