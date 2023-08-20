@@ -148,7 +148,7 @@ class MultitaskEarlyStopping(Callback):
         self.stopped_epoch = 0
         self._check_on_train_epoch_end = check_on_train_epoch_end
         self.log_rank_zero_only = log_rank_zero_only
-        if stopping_mode in self.stopping_modes:
+        if stopping_mode not in self.stopping_modes:
             raise MisconfigurationException((f"`stopping_mode` can be {', '.join(self.stopping_modes)}, "
                                              f"got {self.stopping_mode}"))
         self.stopping_mode = stopping_mode
