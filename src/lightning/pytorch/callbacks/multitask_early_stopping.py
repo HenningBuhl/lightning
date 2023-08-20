@@ -116,16 +116,38 @@ class MultitaskEarlyStopping(Callback):
     ):
         super().__init__()
         monitor = monitor if isinstance(monitor, list) else [monitor]
+
         min_delta = min_delta if isinstance(min_delta, list) else [min_delta]
+        if len(min_delta) != len(monitor):
+            min_delta *= len(monitor)
+
         patience = patience if isinstance(patience, list) else [patience]
+        if len(patience) == 1 and len(patience) != len(monitor):
+            patience *= len(monitor)
+
         mode = mode if isinstance(mode, list) else [mode]
+        if len(mode) == 1 and len(mode) != len(monitor):
+            mode *= len(monitor)
+
         strict = strict if isinstance(strict, list) else [strict]
+        if len(strict) == 1 and len(strict) != len(monitor):
+            strict *= len(monitor)
+
         check_finite = check_finite if isinstance(check_finite, list) else [check_finite]
+        if len(check_finite) == 1 and len(check_finite) != len(monitor):
+            check_finite *= len(monitor)
+
         stopping_threshold = stopping_threshold if isinstance(stopping_threshold, list) else [stopping_threshold]
+        if len(stopping_threshold) == 1 and len(stopping_threshold) != len(monitor):
+            stopping_threshold *= len(monitor)
+            
         divergence_threshold = \
             divergence_threshold if isinstance(divergence_threshold, list) else [divergence_threshold]
+        if len(divergence_threshold) == 1 and len(divergence_threshold) != len(monitor):
+            divergence_threshold *= len(monitor)
+
         wait_count = [0 for _ in range(len(monitor))]
-        
+
         torch_inf = torch.tensor(torch.inf)
         self.monitor_dict = {}
         for _monitor, _min_delta, _patience, _mode, _strict, _check_finite, \
