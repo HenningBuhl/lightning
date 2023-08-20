@@ -457,7 +457,7 @@ class _EvaluationLoop(_Loop):
         assert self._combined_loader is not None
         _verify_dataloader_idx_requirement(
             (step_hook, batch_start_hook, batch_end_hook),
-            (self._is_sequential or self._is_sequence) and self.num_dataloaders > 1,
+            self._is_sequential and self.num_dataloaders > 1,
             self._stage,
             trainer.lightning_module,
         )
