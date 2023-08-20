@@ -32,6 +32,21 @@ from lightning.pytorch.utilities.rank_zero import rank_prefixed_message, rank_ze
 log = logging.getLogger(__name__)
 
 
+@dataclasses.dataclass
+class MonitorInformation():
+    monitor: str
+    min_delta: float
+    patience: int
+    mode: str
+    strict: str
+    check_finite: bool
+    stopping_threshold: float
+    divergence_threshold: float
+    wait_count: float
+    monitor_op: Callable
+    best_score: float
+
+
 class MultitaskEarlyStopping(Callback):
     r"""Monitor metrics and stop training when they stop improving.
 
@@ -41,8 +56,8 @@ class MultitaskEarlyStopping(Callback):
             change of less than or equal to `min_delta`, will count as no improvement.
         patience: number of checks with no improvement
             after which training will be stopped. Under the default configuration, one check happens after
-            every training epoch. However, the frequency of validation can be modified by setting various parameters on
-            the ``Trainer``, for example ``check_val_every_n_epoch`` and ``val_check_interval``.
+            every training epoch. However, the frequency of validation can be modified by setting various
+            parameters on the ``Trainer``, for example ``check_val_every_n_epoch`` and ``val_check_interval``.
 
             .. note::
 
@@ -107,13 +122,16 @@ class MultitaskEarlyStopping(Callback):
         strict = strict if isinstance(strict, list) else [strict]
         check_finite = check_finite if isinstance(check_finite, list) else [check_finite]
         stopping_threshold = stopping_threshold if isinstance(stopping_threshold, list) else [stopping_threshold]
-        divergence_threshold = divergence_threshold if isinstance(divergence_threshold, list) else [divergence_threshold]
+        divergence_threshold = \
+            divergence_threshold if isinstance(divergence_threshold, list) else [divergence_threshold]
         wait_count = [0 for _ in range(len(monitor))]
         
         torch_inf = torch.tensor(torch.inf)
         self.monitor_dict = {}
-        for _monitor, _min_delta, _patience, _mode, _strict, _check_finite, _stopping_threshold, _divergence_threshold, _wait_count in zip(
-            monitor, min_delta, patience, mode, strict, check_finite, stopping_threshold, divergence_threshold, wait_count):
+        for _monitor, _min_delta, _patience, _mode, _strict, _check_finite, \
+            _stopping_threshold, _divergence_threshold, _wait_count in zip(
+                monitor, min_delta, patience, mode, strict, check_finite,
+                stopping_threshold, divergence_threshold, wait_count):
 
             if _mode not in self.mode_dict:
                 raise MisconfigurationException(f"`mode` can be {', '.join(self.mode_dict.keys())}, got {_mode}")
@@ -243,18 +261,22 @@ class MultitaskEarlyStopping(Callback):
                 f"Monitored metric {monitor_info.monitor} = {current} is not finite."
                 f" Previous best value was {monitor_info.best_score:.3f}. Signaling Trainer to stop."
             )
-        elif monitor_info.stopping_threshold is not None and monitor_info.monitor_op(current, monitor_info.stopping_threshold):
+        elif monitor_info.stopping_threshold is not None and monitor_info.monitor_op(
+          current, monitor_info.stopping_threshold):
             should_stop = True
             reason = (
                 "Stopping threshold reached:"
-                f" {monitor_info.monitor} = {current} {self.order_dict[monitor_info.mode]} {monitor_info.stopping_threshold}."
+                f" {monitor_info.monitor} = {current} {self.order_dict[monitor_info.mode]} "
+                f"{monitor_info.stopping_threshold}."
                 " Signaling Trainer to stop."
             )
-        elif monitor_info.divergence_threshold is not None and monitor_info.monitor_op(-current, -monitor_info.divergence_threshold):
+        elif monitor_info.divergence_threshold is not None and monitor_info.monitor_op(
+          -current, -monitor_info.divergence_threshold):
             should_stop = True
             reason = (
                 "Divergence threshold reached:"
-                f" {monitor_info.monitor} = {current} {self.order_dict[monitor_info.mode]} {monitor_info.divergence_threshold}."
+                f" {monitor_info.monitor} = {current} {self.order_dict[monitor_info.mode]} "
+                f"{monitor_info.divergence_threshold}."
                 " Signaling Trainer to stop."
             )
         elif monitor_info.monitor_op(current - monitor_info.min_delta, monitor_info.best_score.to(current.device)):
@@ -267,8 +289,8 @@ class MultitaskEarlyStopping(Callback):
             if monitor_info.wait_count >= monitor_info.patience:
                 should_stop = True
                 reason = (
-                    f"Monitored metric {monitor_info.monitor} did not improve in the last {monitor_info.wait_count} records."
-                    f" Best score: {monitor_info.best_score:.3f}. Signaling Trainer to stop."
+                    f"Monitored metric {monitor_info.monitor} did not improve in the last {monitor_info.wait_count} "
+                    f"records. Best score: {monitor_info.best_score:.3f}. Signaling Trainer to stop."
                 )
 
         return should_stop, reason
@@ -294,17 +316,3 @@ class MultitaskEarlyStopping(Callback):
         message = rank_prefixed_message(message, rank)
         if rank is None or not log_rank_zero_only or rank == 0:
             log.info(message)
-
-@dataclasses.dataclass
-class MonitorInformation():
-    monitor: str
-    min_delta: float
-    patience: int
-    mode: str
-    strict: str
-    check_finite: bool
-    stopping_threshold: float
-    divergence_threshold: float
-    wait_count: float
-    monitor_op: Callable
-    best_score: float
