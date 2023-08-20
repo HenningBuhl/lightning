@@ -257,7 +257,7 @@ class MultitaskEarlyStopping(Callback):
             if monitor_info.monitor in self.should_stop_previously:
                 should_stop = True
                 reason = (f"Monitored metric {monitor_info.monitor} failed previously. It will contribute to "
-                          "the stopping criteria from before.")
+                          "the stopping criteria this iteration.")
             else:
                 current = logs[monitor_info.monitor].squeeze()
                 should_stop, reason = self._evaluate_stopping_criteria(monitor_info, current)
