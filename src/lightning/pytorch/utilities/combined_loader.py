@@ -179,8 +179,9 @@ _SUPPORTED_MODES = {
     "max_size_cycle": _CombinationMode(fn=max, iterator=_MaxSizeCycle),
     "max_size": _CombinationMode(fn=max, iterator=_MaxSize),
     "sequential": _CombinationMode(fn=sum, iterator=_Sequential),
+    "sequence": _CombinationMode(fn=sum, iterator=_Sequential),
 }
-_LITERAL_SUPPORTED_MODES = Literal["min_size", "max_size_cycle", "max_size", "sequential"]
+_LITERAL_SUPPORTED_MODES = Literal["min_size", "max_size_cycle", "max_size", "sequential", "sequence"]
 
 
 class CombinedLoader(Iterable):
