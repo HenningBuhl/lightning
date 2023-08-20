@@ -261,9 +261,9 @@ class MultitaskEarlyStopping(Callback):
             else:
                 current = logs[monitor_info.monitor].squeeze()
                 should_stop, reason = self._evaluate_stopping_criteria(monitor_info, current)
-                should_stops.append(should_stop)
                 if should_stop:
                     self.should_stop_previously.append(monitor_info.monitor)
+            should_stops.append(should_stop)
             if reason is not None:
                 reasons.append(reason)
 
