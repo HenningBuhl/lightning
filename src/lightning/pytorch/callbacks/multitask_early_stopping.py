@@ -234,6 +234,8 @@ class MultitaskEarlyStopping(Callback):
             current = logs[monitor_info.monitor].squeeze()
             should_stop, reason = self._evaluate_stopping_criteria(monitor_info, current)
             should_stops.append(should_stop)
+            print('REASON')
+            print(reason)
             if reason is not None:
                 reasons.append(reason)
 
@@ -250,7 +252,7 @@ class MultitaskEarlyStopping(Callback):
         if should_stop:
             self.stopped_epoch = trainer.current_epoch
         if reasons and self.verbose:
-            self._log_info(trainer, "\n\n".join(reasons), self.log_rank_zero_only)
+            self._log_info(trainer, "".join(reasons), self.log_rank_zero_only)
 
     def _evaluate_stopping_criteria(self, monitor_info, current: Tensor) -> Tuple[bool, Optional[str]]:
         should_stop = False
