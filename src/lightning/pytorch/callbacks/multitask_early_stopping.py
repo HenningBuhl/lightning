@@ -281,7 +281,7 @@ class MultitaskEarlyStopping(Callback):
             if self.verbose:
                 self._log_info(trainer, "Model performance improved. Saving via the passed callable...",
                                self.log_rank_zero_only)
-            self.save_best_model_fn(trainer.current_epoch)
+            self.save_best_model_fn(epoch=trainer.current_epoch)
 
         # determine whether to stop based on stopping_mode.
         should_stop = False
