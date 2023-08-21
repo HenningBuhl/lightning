@@ -279,7 +279,8 @@ class MultitaskEarlyStopping(Callback):
             improved = sum(improveds) > 0
         if improved and self.save_best_model_fn is not None:
             if self.verbose:
-                print('Model performance improved. Saving via the passed callable...')
+                self._log_info(trainer, "Model performance improved. Saving via the passed callable...",
+                               self.log_rank_zero_only)
             self.save_best_model_fn()
 
         # determine whether to stop based on stopping_mode.
