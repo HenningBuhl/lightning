@@ -179,8 +179,9 @@ _SUPPORTED_MODES = {
     "max_size_cycle": _CombinationMode(fn=max, iterator=_MaxSizeCycle),
     "max_size": _CombinationMode(fn=max, iterator=_MaxSize),
     "sequential": _CombinationMode(fn=sum, iterator=_Sequential),
+    "sequence": _CombinationMode(fn=sum, iterator=_Sequential),
 }
-_LITERAL_SUPPORTED_MODES = Literal["min_size", "max_size_cycle", "max_size", "sequential"]
+_LITERAL_SUPPORTED_MODES = Literal["min_size", "max_size_cycle", "max_size", "sequential", "sequence"]
 
 
 class CombinedLoader(Iterable):
@@ -196,6 +197,8 @@ class CombinedLoader(Iterable):
             * ``max_size``: stops after the longest iterable (the one with most items) is done, while returning None
               for the exhausted iterables.
             * ``sequential``: completely consumes each iterable sequentially, and returns a triplet
+              ``(data, idx, iterable_idx)``
+            * ``sequence``: completely consumes each iterable in sequence, and returns a triplet
               ``(data, idx, iterable_idx)``
 
     Examples:
@@ -238,6 +241,17 @@ class CombinedLoader(Iterable):
         tensor([0, 1, 2, 3, 4]) batch_idx=0 dataloader_idx=1
         tensor([5, 6, 7, 8, 9]) batch_idx=1 dataloader_idx=1
         tensor([10, 11, 12, 13, 14]) batch_idx=2 dataloader_idx=1
+        
+        >>> combined_loader = CombinedLoader(iterables, 'sequence')
+        >>> len(combined_loader)
+        5
+        >>> for batch, batch_idx, dataloader_idx in combined_loader:
+        ...     print(f"{batch} {batch_idx=} {dataloader_idx=}")
+        tensor([0, 1, 2, 3]) batch_idx=0 dataloader_idx=0
+        tensor([4, 5]) batch_idx=1 dataloader_idx=0
+        tensor([0, 1, 2, 3, 4]) batch_idx=0 dataloader_idx=0
+        tensor([5, 6, 7, 8, 9]) batch_idx=1 dataloader_idx=0
+        tensor([10, 11, 12, 13, 14]) batch_idx=2 dataloader_idx=0
 
     """
 

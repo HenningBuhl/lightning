@@ -115,6 +115,11 @@ class _EvaluationLoop(_Loop):
         assert self._combined_loader is not None
         return self._combined_loader._mode == "sequential"
 
+    @property
+    def _is_sequence(self) -> bool:
+        assert self._combined_loader is not None
+        return self._combined_loader._mode == "sequence"
+
     @_no_grad_context
     def run(self) -> List[_OUT_DICT]:
         self.setup_data()
@@ -134,6 +139,9 @@ class _EvaluationLoop(_Loop):
                         # the dataloader has changed, notify the logger connector
                         self._store_dataloader_outputs()
                     previous_dataloader_idx = dataloader_idx
+                elif self._is_sequence:
+                    batch, batch_idx, dataloader_idx = next(data_fetcher)
+                    dataloader_idx = 0  # behave as if all data comes from one dataloader.
                 else:
                     batch_idx = (
                         data_fetcher.fetched
@@ -199,7 +207,7 @@ class _EvaluationLoop(_Loop):
         if trainer.datamodule is not None:
             allow_zero_length |= trainer.datamodule.allow_zero_length_dataloader_with_multiple_devices
 
-        if self._is_sequential:
+        if self._is_sequential or self._is_sequence:
             self._max_batches = []
             for dl in combined_loader.flattened:
                 # determine number of batches

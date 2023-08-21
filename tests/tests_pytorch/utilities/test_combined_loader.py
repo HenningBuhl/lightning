@@ -135,6 +135,20 @@ def test_combined_loader_modes_for_dict():
     assert total_idx == len(combined_loader) - 1
     assert dataloader_idx == len(iterables) - 1
 
+    # sequence with dict
+    sum_len = sum(lengths)
+    combined_loader = CombinedLoader(iterables, "sequence")
+    assert combined_loader._iterator is None
+    assert len(combined_loader) == sum_len
+    for total_idx, (item, batch_idx, dataloader_idx) in enumerate(combined_loader):
+        assert isinstance(combined_loader._iterator, _Sequential)
+        assert isinstance(batch_idx, int)
+        assert isinstance(item, Tensor)
+    assert idx == lengths[-1] - 1
+    assert total_idx == sum_len - 1
+    assert total_idx == len(combined_loader) - 1
+    assert dataloader_idx == len(iterables) - 1
+
 
 def test_combined_loader_modes_for_list():
     """Test `CombinedLoaderIterator` given list of iterables."""
@@ -183,6 +197,20 @@ def test_combined_loader_modes_for_list():
     # sequential with list
     sum_len = sum(lengths)
     combined_loader = CombinedLoader(iterables, "sequential")
+    assert combined_loader._iterator is None
+    assert len(combined_loader) == sum_len
+    for total_idx, (item, batch_idx, dataloader_idx) in enumerate(combined_loader):
+        assert isinstance(combined_loader._iterator, _Sequential)
+        assert isinstance(batch_idx, int)
+        assert isinstance(item, Tensor)
+    assert idx == lengths[-1] - 1
+    assert total_idx == sum_len - 1
+    assert total_idx == len(combined_loader) - 1
+    assert dataloader_idx == len(iterables) - 1
+
+    # sequence with list
+    sum_len = sum(lengths)
+    combined_loader = CombinedLoader(iterables, "sequence")
     assert combined_loader._iterator is None
     assert len(combined_loader) == sum_len
     for total_idx, (item, batch_idx, dataloader_idx) in enumerate(combined_loader):
@@ -253,6 +281,20 @@ def test_combined_loader_modes_for_namedtuple():
     assert total_idx == len(combined_loader) - 1
     assert dataloader_idx == len(iterables) - 1
 
+    # sequence with namedtuple
+    sum_len = sum(lengths)
+    combined_loader = CombinedLoader(iterables, "sequence")
+    assert combined_loader._iterator is None
+    assert len(combined_loader) == sum_len
+    for total_idx, (item, batch_idx, dataloader_idx) in enumerate(combined_loader):
+        assert isinstance(combined_loader._iterator, _Sequential)
+        assert isinstance(batch_idx, int)
+        assert isinstance(item, Tensor)
+    assert idx == lengths[-1] - 1
+    assert total_idx == sum_len - 1
+    assert total_idx == len(combined_loader) - 1
+    assert dataloader_idx == len(iterables) - 1
+
 
 def test_combined_loader_raises():
     with pytest.raises(ValueError, match="Unsupported mode 'testtt'"):
@@ -272,7 +314,7 @@ class TestIterableDataset(IterableDataset):
         return next(self.sampler_iter)
 
 
-@pytest.mark.parametrize("mode", ["min_size", "max_size_cycle", "max_size", "sequential"])
+@pytest.mark.parametrize("mode", ["min_size", "max_size_cycle", "max_size", "sequential", "sequence"])
 @pytest.mark.parametrize("use_multiple_dataloaders", [False, True])
 def test_combined_loader_sequence_iterable_dataset(mode, use_multiple_dataloaders):
     """Test `CombinedLoader` of mode 'min_size' given sequence iterables."""
@@ -300,12 +342,12 @@ def test_combined_loader_sequence_iterable_dataset(mode, use_multiple_dataloader
     if use_multiple_dataloaders:
         if mode in ["max_size_cycle", "max_size"]:
             expected = 10
-        elif mode == "sequential":
+        elif mode in ["sequential", "sequence"]:
             expected = 15
     assert idx == expected - 1
 
 
-@pytest.mark.parametrize("mode", ["min_size", "max_size_cycle", "max_size", "sequential"])
+@pytest.mark.parametrize("mode", ["min_size", "max_size_cycle", "max_size", "sequential", "sequence"])
 def test_combined_loader_simultaneous_workers(mode):
     """Test `CombinedLoader` to check how it initializes dataloader workers."""
 
@@ -334,8 +376,8 @@ def test_combined_loader_simultaneous_workers(mode):
     for loader in loaders:
         workers_active.append(loader.workers_active)
 
-    # Sequential only starts the first dataloader, other modes start both
-    expected = [True, False] if mode == "sequential" else [True, True]
+    # Sequential and sequence only start the first dataloader, other modes start both
+    expected = [True, False] if mode == "sequential" or "sequence" else [True, True]
     assert workers_active == expected
 
 
@@ -525,7 +567,8 @@ def test_combined_data_loader_with_max_size_cycle_and_ddp(monkeypatch, accelerat
 
 
 @pytest.mark.parametrize("use_distributed_sampler", [False, True])
-@pytest.mark.parametrize("mode", ["min_size", "max_size_cycle", "max_size", "sequential"])
+@pytest.mark.parametrize("mode", ["min_size", "max_size_cycle", "max_size", "sequential", "sequence"])
+# tests + check "sequential"
 def test_combined_dataloader_for_training_with_ddp(use_distributed_sampler, mode, mps_count_0):
     """When providing a CombinedLoader as the training data, it should be correctly receive the distributed
     samplers."""
