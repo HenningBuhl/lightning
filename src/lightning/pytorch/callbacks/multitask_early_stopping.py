@@ -113,6 +113,7 @@ class MultitaskEarlyStopping(Callback):
         check_on_train_epoch_end: Optional[bool] = None,
         log_rank_zero_only: bool = False,
         stopping_mode: str = "all",
+        save_best_model_fn: Callable = None,
     ):
         super().__init__()
         monitor = monitor if isinstance(monitor, list) else [monitor]
@@ -175,6 +176,7 @@ class MultitaskEarlyStopping(Callback):
             raise MisconfigurationException((f"`stopping_mode` can be {', '.join(self.stopping_modes)}, "
                                              f"got {self.stopping_mode}"))
         self.stopping_mode = stopping_mode
+        self.save_best_model_fn = save_best_model_fn
 
     @property
     def state_key(self) -> str:
@@ -248,6 +250,7 @@ class MultitaskEarlyStopping(Callback):
 
         should_stops = []
         reasons = []
+        improveds = []
         skipped_metrics = 0
         for metric, monitor_info in self.monitor_dict.items():
             if not self._validate_condition_metric(monitor_info, logs):
@@ -256,16 +259,26 @@ class MultitaskEarlyStopping(Callback):
 
             if monitor_info.monitor in self.should_stop_previously:
                 should_stop = True
+                improved = False
                 reason = (f"Monitored metric {monitor_info.monitor} failed previously. It will contribute to "
                           "the stopping criteria this iteration.")
             else:
                 current = logs[monitor_info.monitor].squeeze()
-                should_stop, reason = self._evaluate_stopping_criteria(monitor_info, current)
+                should_stop, improved, reason = self._evaluate_stopping_criteria(monitor_info, current)
                 if should_stop:
                     self.should_stop_previously.append(monitor_info.monitor)
             should_stops.append(should_stop)
+            improveds.append(improved)
             if reason is not None:
                 reasons.append(reason)
+
+        # determine whether to save a new best model.
+        if self.stopping_mode == 'all':
+            improved = sum(improveds) == len(self.monitor_dict) - skipped_metrics
+        else:  # self.stopping_mode == 'any'
+            improved = sum(improveds) > 0
+        if improved:
+            self.save_best_model_fn()
 
         # determine whether to stop based on stopping_mode.
         should_stop = False
@@ -286,6 +299,7 @@ class MultitaskEarlyStopping(Callback):
 
     def _evaluate_stopping_criteria(self, monitor_info, current: Tensor) -> Tuple[bool, Optional[str]]:
         should_stop = False
+        improved = False
         reason = None
         if monitor_info.check_finite and not torch.isfinite(current):
             should_stop = True
@@ -311,6 +325,7 @@ class MultitaskEarlyStopping(Callback):
             )
         elif monitor_info.monitor_op(current - monitor_info.min_delta, monitor_info.best_score.to(current.device)):
             should_stop = False
+            improved = True
             reason = self._improvement_message(monitor_info, current)
             monitor_info.best_score = current
             monitor_info.wait_count = 0
@@ -323,7 +338,7 @@ class MultitaskEarlyStopping(Callback):
                     f"records. Best score: {monitor_info.best_score:.3f}."
                 )
 
-        return should_stop, reason
+        return should_stop, improved, reason
 
     def _improvement_message(self, monitor_info: MonitorInformation, current: Tensor) -> str:
         """Formats a log message that informs the user about an improvement in the monitored score."""
