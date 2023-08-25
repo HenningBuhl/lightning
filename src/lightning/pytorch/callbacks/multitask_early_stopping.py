@@ -257,23 +257,18 @@ class MultitaskEarlyStopping(Callback):
                 skipped_metrics += 1
                 continue  # short circuit if metric not present
 
-            if monitor_info.monitor in self.should_stop_previously:
-                should_stop = True
-                improved = False
-                reason = (f"Monitored metric {monitor_info.monitor} failed previously. It will contribute to "
-                          "the stopping criteria this iteration.")
-            else:
-                current = logs[monitor_info.monitor].squeeze()
-                should_stop, improved, reason = self._evaluate_stopping_criteria(monitor_info, current)
-                if should_stop and self.stopping_mode == 'all':
-                    self.should_stop_previously.append(monitor_info.monitor)
+            current = logs[monitor_info.monitor].squeeze()
+            should_stop, improved, reason = self._evaluate_stopping_criteria(monitor_info, current)
             should_stops.append(should_stop)
             improveds.append(improved)
             if reason is not None:
                 reasons.append(reason)
 
         # determine whether to save a new best model.
-        improved = sum(improveds) == len(self.monitor_dict) - skipped_metrics  # stopping_mode is irrelevant here.
+        if self.stopping_mode == 'any':  # stopping_mode here is flipped as improvement is the opposite of should_stop.
+            improved = sum(improveds) == (len(self.monitor_dict) - skipped_metrics)
+        else:  # self.stopping_mode == 'all'
+            improved = sum(improveds) > 0
         if improved and self.save_best_model_fn is not None:
             if self.verbose:
                 self._log_info(trainer, "Model performance improved. Saving via the passed callable...",
@@ -281,9 +276,8 @@ class MultitaskEarlyStopping(Callback):
             self.save_best_model_fn(epoch=trainer.current_epoch)
 
         # determine whether to stop based on stopping_mode.
-        should_stop = False
         if self.stopping_mode == 'all':
-            should_stop = sum(should_stops) == len(self.monitor_dict) - skipped_metrics
+            should_stop = sum(should_stops) == (len(self.monitor_dict) - skipped_metrics)
         else:  # self.stopping_mode == 'any'
             should_stop = sum(should_stops) > 0
 
