@@ -77,8 +77,8 @@ class MultitaskEarlyStopping(Callback):
         check_on_train_epoch_end: whether to run early stopping at the end of the training epoch.
             If this is ``False``, then the check runs at the end of the validation.
         log_rank_zero_only: When set ``True``, logs the status of the early stopping callback only for rank 0 process.
-        stopping_mode: Whether to check all metrics for improvement (all) or if any metric improvement (any)
-            suffices to continue training.
+        stopping_mode: Whether all metrics have to deteriorate in performance in order to stop training (all)
+            or if any metric performance deterioration suffices to stop training (any).
 
     Raises:
         MisconfigurationException:
@@ -265,7 +265,7 @@ class MultitaskEarlyStopping(Callback):
             else:
                 current = logs[monitor_info.monitor].squeeze()
                 should_stop, improved, reason = self._evaluate_stopping_criteria(monitor_info, current)
-                if should_stop:
+                if should_stop and self.stopping_mode == 'all':
                     self.should_stop_previously.append(monitor_info.monitor)
             should_stops.append(should_stop)
             improveds.append(improved)
@@ -273,10 +273,7 @@ class MultitaskEarlyStopping(Callback):
                 reasons.append(reason)
 
         # determine whether to save a new best model.
-        if self.stopping_mode == 'all':
-            improved = sum(improveds) == len(self.monitor_dict) - skipped_metrics
-        else:  # self.stopping_mode == 'any'
-            improved = sum(improveds) > 0
+        improved = sum(improveds) == len(self.monitor_dict) - skipped_metrics  # stopping_mode is irrelevant here.
         if improved and self.save_best_model_fn is not None:
             if self.verbose:
                 self._log_info(trainer, "Model performance improved. Saving via the passed callable...",
