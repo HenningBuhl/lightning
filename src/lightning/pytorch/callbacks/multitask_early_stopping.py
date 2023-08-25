@@ -295,7 +295,7 @@ class MultitaskEarlyStopping(Callback):
         trainer.should_stop = trainer.should_stop or should_stop
         if should_stop:
             self.stopped_epoch = trainer.current_epoch
-        if reasons and self.verbose:
+        if improved and reasons and self.verbose:
             summary = (f"Training {('was stopped early') if should_stop else 'continues'}."
                        " Individual outputs of metric checking: ")
             self._log_info(trainer, summary + " ; ".join(reasons), self.log_rank_zero_only)
